@@ -1,0 +1,41 @@
+[build-system]
+requires = [
+    "setuptools>=61.0", 
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "erieiron-public"
+version = "0.1.1"
+description = "Public common utilities for Erieiron projects"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Erieiron"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "boto3",
+]
+
+[project.urls]
+Homepage = "https://github.com/erieiron/erieiron-public-common"
+Repository = "https://github.com/erieiron/erieiron-public-common"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["erieiron-public*"]
+
+[tool.setuptools.package-dir]
+"erieiron-public" = "erieiron-public"
