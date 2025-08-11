@@ -6,8 +6,8 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "erieiron-public"
-version = "0.1.1"
+name = "erieiron-public-common"
+version = "0.1.4"
 description = "Public common utilities for Erieiron projects"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -35,7 +35,7 @@ Repository = "https://github.com/erieiron/erieiron-public-common"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["erieiron-public*"]
+include = ["erieiron_public_common*"]
 
 [tool.setuptools.package-dir]
-"erieiron-public" = "erieiron-public"
+"erieiron_public_common" = "erieiron_public_common"
