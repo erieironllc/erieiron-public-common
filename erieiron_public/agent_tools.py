@@ -6,15 +6,15 @@ import boto3
 
 
 @lru_cache(maxsize=1)
-def get_secret_json(secret_arn: str) -> dict:
-    client = boto3.client("secretsmanager", region_name=os.getenv("AWS_DEFAULT_REGION"))  # Region from env/IMDS unless overridden elsewhere
+def get_secret_json(secret_arn: str, region_name: str) -> dict:
+    client = boto3.client("secretsmanager", region_name=region_name)
     resp = client.get_secret_value(SecretId=secret_arn)
     secret_str = resp.get("SecretString")
     return json.loads(secret_str)
 
 
-def get_django_settings_databases_conf():
-    rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN")
+def get_django_settings_databases_conf(region_name: str) -> dict:
+    rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN", region_name)
     return {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -28,12 +28,12 @@ def get_django_settings_databases_conf():
     }
 
 
-def get_secret_from_env_arn(env_var_name):
+def get_secret_from_env_arn(env_var_name: str, region_name: str) -> dict:
     secret_arn = os.getenv(env_var_name)
     if not secret_arn:
         raise ValueError(f"no env var found for {env_var_name}")
     
-    secret_json = get_secret_json(secret_arn)
+    secret_json = get_secret_json(secret_arn, region_name)
     if not secret_json:
         raise ValueError(f"no secret data found for {secret_arn}")
     
