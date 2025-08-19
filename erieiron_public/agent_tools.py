@@ -13,7 +13,11 @@ def get_secret_json(secret_arn: str, region_name: str) -> dict:
     return json.loads(secret_str)
 
 
-def get_django_settings_databases_conf(region_name: str) -> dict:
+def get_django_settings_databases_conf(region_name: str = None) -> dict:
+    region_name = os.getenv("AWS_DEFAULT_REGION")
+    if not region_name:
+        raise ValueError(f"unable to identify aws region.  not found in param or in env AWS_DEFAULT_REGION")
+    
     rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN", region_name)
     return {
         "default": {
