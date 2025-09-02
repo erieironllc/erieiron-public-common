@@ -28,6 +28,9 @@ def get_django_settings_databases_conf(region_name: str = None) -> dict:
             "HOST": rds_secret["host"],
             "PORT": int(rds_secret["port"]),
             "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
+            "TEST": {
+                "NAME": rds_secret["dbname"]
+            },
         }
     }
 
