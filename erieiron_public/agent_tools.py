@@ -1,8 +1,26 @@
 import json
 import os
 from functools import lru_cache
+from pathlib import Path
 
 import boto3
+import yaml
+
+
+def parse_cloudformation_yaml(cloudformation_yaml) -> dict:
+    class CloudFormationLoader(yaml.SafeLoader):
+        pass
+    
+    for tag in ["!Select", "!Ref", "!Sub", "!GetAtt", "!Join", "!If", "!Equals", "!And", "!Or", "!Not", "!FindInMap", "!ImportValue"]:
+        CloudFormationLoader.add_constructor(tag, lambda loader, node: node.value)
+    
+    if isinstance(cloudformation_yaml, Path):
+        cloudformation_yaml = cloudformation_yaml.read_text()
+    
+    return yaml.load(
+        cloudformation_yaml,
+        Loader=CloudFormationLoader
+    )
 
 
 def get_django_settings_databases_conf(region_name: str = None) -> dict:
