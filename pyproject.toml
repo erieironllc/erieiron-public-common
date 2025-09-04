@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "erieiron-public-common"
-version = "0.1.15"
+version = "0.1.16"
 description = "Public common utilities for Erieiron projects"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "boto3",
-    "yaml",
+    "pyyaml",
     "openai>=0.27.0"
 ]
 
