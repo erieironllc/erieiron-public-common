@@ -22,14 +22,14 @@ def get_django_settings_databases_conf(region_name: str = None) -> dict:
     return {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": rds_secret["dbname"],
-            "USER": rds_secret["username"],
-            "PASSWORD": rds_secret["password"],
-            "HOST": rds_secret["host"],
-            "PORT": int(rds_secret["port"]),
+            "NAME": rds_secret.get("dbname"),
+            "USER": rds_secret.get("username"),
+            "PASSWORD": rds_secret.get("password"),
+            "HOST": rds_secret.get("host"),
+            "PORT": int(rds_secret.get("port")),
             "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
             "TEST": {
-                "NAME": rds_secret["dbname"]
+                "NAME": rds_secret.get("dbname")
             },
         }
     }
