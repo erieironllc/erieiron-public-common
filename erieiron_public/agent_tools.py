@@ -40,11 +40,11 @@ def get_django_settings_databases_conf(region_name: str = None) -> dict:
     return {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": rds_secret.get("dbname"),
+            "NAME": os.getenv("ERIEIRON_DB_NAME"),
+            "HOST": os.getenv("ERIEIRON_DB_HOST"),
+            "PORT": int(os.getenv("ERIEIRON_DB_PORT", "5432")),
             "USER": rds_secret.get("username"),
             "PASSWORD": rds_secret.get("password"),
-            "HOST": rds_secret.get("host"),
-            "PORT": int(rds_secret.get("port", 5432)),
             "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
             "TEST": {
                 "NAME": rds_secret.get("dbname")
