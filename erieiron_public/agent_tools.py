@@ -23,7 +23,7 @@ def parse_cloudformation_yaml(cloudformation_yaml) -> dict:
     )
 
 
-def get_django_settings_databases_conf(region_name: str = None) -> dict:
+def get_databases_conf(region_name: str = None) -> dict:
     """
     Build Django DATABASES configuration from an RDS secret stored in AWS Secrets Manager.
 
@@ -38,18 +38,22 @@ def get_django_settings_databases_conf(region_name: str = None) -> dict:
     rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN")
     
     return {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("ERIEIRON_DB_NAME"),
-            "HOST": os.getenv("ERIEIRON_DB_HOST"),
-            "PORT": int(os.getenv("ERIEIRON_DB_PORT", "5432")),
-            "USER": rds_secret.get("username"),
-            "PASSWORD": rds_secret.get("password"),
-            "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
-            "TEST": {
-                "NAME": rds_secret.get("dbname")
-            },
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("ERIEIRON_DB_NAME"),
+        "HOST": os.getenv("ERIEIRON_DB_HOST"),
+        "PORT": int(os.getenv("ERIEIRON_DB_PORT", "5432")),
+        "USER": rds_secret.get("username"),
+        "PASSWORD": rds_secret.get("password"),
+        "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
+        "TEST": {
+            "NAME": rds_secret.get("dbname")
         }
+    }
+
+
+def get_django_settings_databases_conf(region_name: str = None) -> dict:
+    return {
+        "default": get_databases_conf(region_name)
     }
 
 
