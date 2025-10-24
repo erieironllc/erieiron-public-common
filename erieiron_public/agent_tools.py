@@ -23,7 +23,7 @@ def parse_cloudformation_yaml(cloudformation_yaml) -> dict:
     )
 
 
-def get_databases_conf(region_name: str = None) -> dict:
+def get_database_conf(region_name: str = None) -> dict:
     """
     Build Django DATABASES configuration from an RDS secret stored in AWS Secrets Manager.
 
@@ -53,7 +53,7 @@ def get_databases_conf(region_name: str = None) -> dict:
 
 def get_django_settings_databases_conf(region_name: str = None) -> dict:
     return {
-        "default": get_databases_conf(region_name)
+        "default": get_database_conf(region_name)
     }
 
 
