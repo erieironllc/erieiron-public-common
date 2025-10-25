@@ -25,7 +25,16 @@ def parse_cloudformation_yaml(cloudformation_yaml) -> dict:
 
 
 def get_pg8000_connection(region_name: str = None):
-    """Return a pg8000 connection that matches get_database_conf()."""
+    """Return a pg8000 connection that matches get_database_conf().
+
+    The returned connection can be used as a context manager to ensure the
+    handle is closed, e.g.:
+
+    ```python
+    with get_pg8000_connection(region) as conn:
+        conn.cursor().execute("SELECT 1")
+    ```
+    """
     db_conf = get_database_conf(region_name)
 
     connection_kwargs = {
@@ -41,7 +50,29 @@ def get_pg8000_connection(region_name: str = None):
         missing_display = ", ".join(missing)
         raise ValueError(f"missing database configuration values: {missing_display}")
 
-    return pg8000.connect(**connection_kwargs)
+    connection = pg8000.connect(**connection_kwargs)
+    return _ensure_pg8000_connection_context_manager(connection)
+
+
+def _ensure_pg8000_connection_context_manager(connection):
+    """Attach __enter__/__exit__ to pg8000 connection instances when missing."""
+    connection_cls = connection.__class__
+    has_enter = getattr(connection_cls, "__enter__", None)
+    has_exit = getattr(connection_cls, "__exit__", None)
+
+    if has_enter and has_exit:
+        return connection
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+        return False
+
+    setattr(connection_cls, "__enter__", __enter__)
+    setattr(connection_cls, "__exit__", __exit__)
+    return connection
 
 
 def get_database_conf(region_name: str = None) -> dict:
