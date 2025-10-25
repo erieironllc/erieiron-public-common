@@ -4,6 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import boto3
+import pg8000
 import yaml
 
 
@@ -21,6 +22,26 @@ def parse_cloudformation_yaml(cloudformation_yaml) -> dict:
         cloudformation_yaml,
         Loader=CloudFormationLoader
     )
+
+
+def get_pg8000_connection(region_name: str = None):
+    """Return a pg8000 connection that matches get_database_conf()."""
+    db_conf = get_database_conf(region_name)
+
+    connection_kwargs = {
+        "user": db_conf.get("USER"),
+        "password": db_conf.get("PASSWORD"),
+        "host": db_conf.get("HOST"),
+        "port": db_conf.get("PORT"),
+        "database": db_conf.get("NAME"),
+    }
+
+    missing = [key for key, value in connection_kwargs.items() if value in (None, "")]
+    if missing:
+        missing_display = ", ".join(missing)
+        raise ValueError(f"missing database configuration values: {missing_display}")
+
+    return pg8000.connect(**connection_kwargs)
 
 
 def get_database_conf(region_name: str = None) -> dict:
