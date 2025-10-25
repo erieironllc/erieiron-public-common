@@ -35,6 +35,7 @@ def get_pg8000_connection(region_name: str = None):
         conn.cursor().execute("SELECT 1")
     ```
     """
+    region_name = region_name or os.getenv("AWS_DEFAULT_REGION")
     db_conf = get_database_conf(region_name)
 
     connection_kwargs = {
@@ -87,7 +88,7 @@ def get_database_conf(region_name: str = None) -> dict:
     - dict
       A dict suitable for Django's DATABASES setting with a 'default' connection.
     """
-    rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN")
+    rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN", region_name)
     
     return {
         "ENGINE": "django.db.backends.postgresql",
