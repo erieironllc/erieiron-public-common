@@ -91,12 +91,10 @@ def get_database_conf(region_name: str = None) -> dict:
     
     if os.environ.get("LOCAL_DB_NAME"):
         return {
-            "default": {
-                "ENGINE": "django.db.backends.postgresql",
-                "NAME": os.environ.get("LOCAL_DB_NAME"),
-                "HOST": "localhost",
-                "PORT": "5432",
-            }
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("LOCAL_DB_NAME"),
+            "HOST": "localhost",
+            "PORT": "5432",
         }
     else:
         rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN", region_name)
