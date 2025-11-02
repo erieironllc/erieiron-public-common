@@ -37,7 +37,7 @@ def get_pg8000_connection(region_name: str = None):
     """
     region_name = region_name or os.getenv("AWS_DEFAULT_REGION")
     db_conf = get_database_conf(region_name)
-
+    
     connection_kwargs = {
         "user": db_conf.get("USER"),
         "password": db_conf.get("PASSWORD"),
@@ -45,12 +45,12 @@ def get_pg8000_connection(region_name: str = None):
         "port": db_conf.get("PORT"),
         "database": db_conf.get("NAME"),
     }
-
+    
     missing = [key for key, value in connection_kwargs.items() if value in (None, "")]
     if missing:
         missing_display = ", ".join(missing)
         raise ValueError(f"missing database configuration values: {missing_display}")
-
+    
     connection = pg8000.connect(**connection_kwargs)
     return _ensure_pg8000_connection_context_manager(connection)
 
@@ -60,17 +60,17 @@ def _ensure_pg8000_connection_context_manager(connection):
     connection_cls = connection.__class__
     has_enter = getattr(connection_cls, "__enter__", None)
     has_exit = getattr(connection_cls, "__exit__", None)
-
+    
     if has_enter and has_exit:
         return connection
-
+    
     def __enter__(self):
         return self
-
+    
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
         return False
-
+    
     setattr(connection_cls, "__enter__", __enter__)
     setattr(connection_cls, "__exit__", __exit__)
     return connection
@@ -88,20 +88,31 @@ def get_database_conf(region_name: str = None) -> dict:
     - dict
       A dict suitable for Django's DATABASES setting with a 'default' connection.
     """
-    rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN", region_name)
     
-    return {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("ERIEIRON_DB_NAME"),
-        "HOST": os.getenv("ERIEIRON_DB_HOST"),
-        "PORT": int(os.getenv("ERIEIRON_DB_PORT", "5432")),
-        "USER": rds_secret.get("username"),
-        "PASSWORD": rds_secret.get("password"),
-        "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
-        "TEST": {
-            "NAME": rds_secret.get("dbname")
+    if os.environ.get("LOCAL_DB_NAME"):
+        return {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.environ.get("LOCAL_DB_NAME"),
+                "HOST": "localhost",
+                "PORT": "5432",
+            }
         }
-    }
+    else:
+        rds_secret = get_secret_from_env_arn("RDS_SECRET_ARN", region_name)
+        
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("ERIEIRON_DB_NAME"),
+            "HOST": os.getenv("ERIEIRON_DB_HOST"),
+            "PORT": int(os.getenv("ERIEIRON_DB_PORT", "5432")),
+            "USER": rds_secret.get("username"),
+            "PASSWORD": rds_secret.get("password"),
+            "CONN_MAX_AGE": int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "60")),
+            "TEST": {
+                "NAME": rds_secret.get("dbname")
+            }
+        }
 
 
 def get_django_settings_databases_conf(region_name: str = None) -> dict:
