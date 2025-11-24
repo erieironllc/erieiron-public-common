@@ -11,7 +11,6 @@ import boto3
 import pg8000
 import yaml
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -95,10 +94,10 @@ def _ensure_pg8000_connection_context_manager(connection):
 
 
 def get_database_conf(
-    region_name: str = None,
-    *,
-    force_secret_refresh: bool = False,
-    include_credentials: bool = False
+        region_name: str = None,
+        *,
+        force_secret_refresh: bool = False,
+        include_credentials: bool = False
 ) -> dict:
     """
     Build Django DATABASES configuration from an RDS secret stored in AWS Secrets Manager.
@@ -127,7 +126,7 @@ def get_database_conf(
             "HOST": "localhost",
             "PORT": "5432",
         }
-
+    
     rds_secret = get_secret_from_env_arn(
         "RDS_SECRET_ARN",
         region_name,
@@ -136,7 +135,7 @@ def get_database_conf(
     conn_max_age = int(os.getenv("DJANGO_DB_CONN_MAX_AGE", "0"))
     database_name = os.getenv("ERIEIRON_DB_NAME") or rds_secret.get("dbname")
     resolved_region = _resolve_region(region_name)
-
+    
     db_conf = {
         "ENGINE": "erieiron_public.db.backends.dynamic_postgresql",
         "NAME": database_name,
@@ -148,7 +147,7 @@ def get_database_conf(
             "NAME": rds_secret.get("dbname")
         }
     }
-
+    
     if include_credentials:
         db_conf.update(
             {
@@ -156,7 +155,7 @@ def get_database_conf(
                 "PASSWORD": rds_secret.get("password"),
             }
         )
-
+    
     return db_conf
 
 
@@ -167,10 +166,10 @@ def get_django_settings_databases_conf(region_name: str = None) -> dict:
 
 
 def get_secret_from_env_arn(
-    env_var_name: str,
-    region_name: str = None,
-    *,
-    force_refresh: bool = False
+        env_var_name: str,
+        region_name: str = None,
+        *,
+        force_refresh: bool = False
 ) -> dict:
     """
     Load a secret from AWS Secrets Manager by looking up its ARN from an environment variable.
@@ -201,10 +200,10 @@ def get_secret_from_env_arn(
 
 
 def get_secret_json(
-    secret_arn: str,
-    region_name: str = None,
-    *,
-    force_refresh: bool = False
+        secret_arn: str,
+        region_name: str = None,
+        *,
+        force_refresh: bool = False
 ) -> dict:
     """
     Retrieve a secret from AWS Secrets Manager and return it as a JSON dict.
@@ -254,33 +253,33 @@ def _get_secrets_manager_cache() -> "SecretsManagerCache":
 
 class SecretsManagerCache:
     """Thread-safe TTL cache for AWS Secrets Manager payloads."""
-
+    
     def __init__(self, ttl_seconds: int):
         self.ttl_seconds = ttl_seconds
         self._lock = threading.Lock()
         self._cache: Dict[Tuple[str, str], Tuple[float, dict]] = {}
-
+    
     def get_secret(
-        self,
-        secret_arn: str,
-        region_name: str = None,
-        *,
-        force_refresh: bool = False
+            self,
+            secret_arn: str,
+            region_name: str = None,
+            *,
+            force_refresh: bool = False
     ) -> dict:
         region = _resolve_region(region_name)
         key = (secret_arn, region)
         now = time.monotonic()
         use_cache = self.ttl_seconds > 0 and not force_refresh
-
+        
         if use_cache:
             with self._lock:
                 cached = self._cache.get(key)
                 if cached and cached[0] > now:
                     return cached[1].copy()
-
+        
         secret_payload = self._fetch_secret(secret_arn, region)
         payload_copy = secret_payload.copy()
-
+        
         if self.ttl_seconds > 0:
             expires_at = now + self.ttl_seconds
             with self._lock:
@@ -288,9 +287,9 @@ class SecretsManagerCache:
         else:
             with self._lock:
                 self._cache.pop(key, None)
-
+        
         return payload_copy
-
+    
     def _fetch_secret(self, secret_arn: str, region_name: str) -> dict:
         secret_string = boto3.client(
             "secretsmanager",
@@ -298,9 +297,26 @@ class SecretsManagerCache:
         ).get_secret_value(
             SecretId=secret_arn
         ).get("SecretString")
-
+        
         if not secret_string:
             raise ValueError(f"no secret data found for {secret_arn}")
-
+        
         logger.info("Refreshed secret %s in region %s", secret_arn, region_name)
         return json.loads(secret_string)
+
+
+@lru_cache(maxsize=1)
+def get_cognito_config(force_refresh: bool = False) -> dict:
+    secret_arn = os.environ.get("MOBILE_APP_CONFIG_SECRET_ARN")
+    if secret_arn:
+        return _get_secrets_manager_cache().get_secret(
+            secret_arn=secret_arn,
+            force_refresh=force_refresh
+        )
+        
+    # Fallback to individual env vars for backwards compatibility
+    return {
+        "userPoolId": os.environ.get("COGNITO_USER_POOL_ID"),
+        "clientId": os.environ.get("COGNITO_CLIENT_ID"),
+        "domain": os.environ.get("COGNITO_DOMAIN"),
+    }
