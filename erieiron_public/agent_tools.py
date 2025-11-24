@@ -307,7 +307,7 @@ class SecretsManagerCache:
 
 @lru_cache(maxsize=1)
 def get_cognito_config(force_refresh: bool = False) -> dict:
-    secret_arn = os.environ.get("MOBILE_APP_CONFIG_SECRET_ARN")
+    secret_arn = os.environ.get("COGNITO_SECRET_ARN")
     if secret_arn:
         return _get_secrets_manager_cache().get_secret(
             secret_arn=secret_arn,
