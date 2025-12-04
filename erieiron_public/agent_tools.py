@@ -144,7 +144,7 @@ def get_database_conf(
         "CONN_MAX_AGE": conn_max_age,
         "RDS_SECRET_REGION_NAME": resolved_region,
         "TEST": {
-            "NAME": rds_secret.get("dbname")
+            "NAME": database_name
         }
     }
     
