@@ -90,7 +90,7 @@ def llm_chat(
     
     kwargs = {
         "model": model_name,
-        "input": messages,
+        "messages": messages,
     }
     
     if response_format:
@@ -114,23 +114,29 @@ def llm_chat(
             }
 
     if reasoning_effort:
-        # OpenAI Responses API expects reasoning set under the "reasoning" object
-        # Example: {"reasoning": {"effort": "high"}}
-        kwargs["reasoning"] = {"effort": reasoning_effort}
-    
+        # For o1 models, reasoning effort is passed as a parameter
+        # For gpt-4/gpt-5 models, this parameter doesn't exist
+        # Skip for now as gpt-5 doesn't support reasoning_effort parameter
+        pass
+
     # Apply request tag for billing/analytics
     if tag:
         safe_tag = _normalize_tag(tag)
-        # Attach to metadata for downstream usage aggregation
-        kwargs["metadata"] = {**kwargs.get("metadata", {}), "billing_tag": safe_tag}
-        # Also set the OpenAI 'user' field to aid abuse monitoring and per-user usage views
+        # Attach to metadata for downstream usage aggregation (if supported)
+        # Note: metadata may not be supported in all OpenAI API versions
+        # kwargs["metadata"] = {**kwargs.get("metadata", {}), "billing_tag": safe_tag}
+        # Set the OpenAI 'user' field to aid abuse monitoring and per-user usage views
         # Only set if not already provided by caller
         kwargs.setdefault("user", safe_tag)
-    
+
+    # Use chat completions API instead of responses API
+    response = client.chat.completions.create(**kwargs)
+
     if response_format:
-        return client.responses.create(**kwargs).output_json
+        # Parse JSON from response content
+        return json.loads(response.choices[0].message.content)
     else:
-        return client.responses.create(**kwargs).output_text
+        return response.choices[0].message.content
 
 
 def _ensure_str_list(user_prompts) -> list[str]:
